@@ -1,0 +1,235 @@
+Organizations:
+    - &OemOrg
+        Name: oemMSP
+        ID: oemMSP
+        MSPDir: ../organizations/rms.com/oem/msp
+
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('oemMSP.member', 'oemMSP.peer', 'oemMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('oemMSP.member')"
+            Admins:
+                Type: Signature
+                Rule: "OR('oemMSP.admin')"
+
+        OrdererEndpoints:
+            - "orderer.oem.rms.com:7050"
+
+        AnchorPeers:
+            - Host: peer0.oem.rms.com
+              Port: 7051
+
+    - &ClientOrg
+        Name: clientMSP
+        ID: clientMSP
+        MSPDir: ../organizations/rms.com/client/msp
+
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('clientMSP.admin', 'clientMSP.peer', 'clientMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('clientMSP.admin', 'clientMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('clientMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('clientMSP.peer')"
+
+
+        AnchorPeers:
+            # AnchorPeers defines the location of peers which can be used
+            # for cross org gossip communication.  Note, this value is only
+            # encoded in the genesis block in the Application section context
+            - Host: peer0.client.rms.com
+              Port: 8051
+            
+    - &InsuranceOrg
+        # DefaultOrg defines the organization which is used in the sampleconfig
+        # of the fabric.git development environment
+        Name: insuranceMSP
+
+        # ID to load the MSP definition as
+        ID: insuranceMSP
+
+        MSPDir: ../organizations/rms.com/insurance/msp
+
+        # Policies defines the set of policies at this level of the config tree
+        # For organization policies, their canonical path is usually
+        #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('insuranceMSP.admin', 'insuranceMSP.peer', 'insuranceMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('insuranceMSP.admin', 'insuranceMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('insuranceMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('insuranceMSP.peer')"
+
+        AnchorPeers:
+            # AnchorPeers defines the location of peers which can be used
+            # for cross org gossip communication.  Note, this value is only
+            # encoded in the genesis block in the Application section context
+            - Host: peer0.insurance.rms.com
+              Port: 9051
+
+
+Capabilities:
+    Channel: &ChannelCapabilities
+        V2_0: true
+        V1_4_3: false
+        V1_4_2: true
+        V1_4_1: false
+    Orderer: &OrdererCapabilities
+        V2_0: true
+        V1_4_3: false
+        V1_4_2: true
+        V1_4_1: false
+    Application: &ApplicationCapabilities
+        V2_0: true
+        V1_4_3: false
+        V1_4_2: true
+        V1_4_1: false
+
+Application: &ApplicationDefaults
+
+    # Organizations is the list of orgs which are defined as participants on
+    # the application side of the network
+    Organizations:
+
+    # Policies defines the set of policies at this level of the config tree
+    # For Application policies, their canonical path is
+    #   /Channel/Application/<PolicyName>
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        LifecycleEndorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
+        Endorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
+
+    Capabilities:
+        <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+
+    # Orderer Type: The orderer implementation to start
+    OrdererType: etcdraft
+
+    EtcdRaft:
+        Consenters:
+        - Host: 127.0.0.1
+          Port: 7050
+          ClientTLSCert: ../organizations/rms.com/oem/orderer/tls/server.crt
+          ServerTLSCert: ../organizations/rms.com/oem/orderer/tls/server.crt
+
+    # Batch Timeout: The amount of time to wait before creating a batch
+    BatchTimeout: 2s
+
+    # Batch Size: Controls the number of messages batched into a block
+    BatchSize:
+
+        # Max Message Count: The maximum number of messages to permit in a batch
+        MaxMessageCount: 10
+
+        # Absolute Max Bytes: The absolute maximum number of bytes allowed for
+        # the serialized messages in a batch.
+        AbsoluteMaxBytes: 99 MB
+
+        # Preferred Max Bytes: The preferred maximum number of bytes allowed for
+        # the serialized messages in a batch. A message larger than the preferred
+        # max bytes will result in a batch larger than preferred max bytes.
+        PreferredMaxBytes: 512 KB
+
+    # Organizations is the list of orgs which are defined as participants on
+    # the orderer side of the network
+    Organizations:
+    - *OemOrg
+
+    # Policies defines the set of policies at this level of the config tree
+    # For Orderer policies, their canonical path is
+    #   /Channel/Orderer/<PolicyName>
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        # BlockValidation specifies what signatures must be included in the block
+        # from the orderer for the peer to validate it.
+        BlockValidation:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+    # Policies defines the set of policies at this level of the config tree
+    # For Channel policies, their canonical path is
+    #   /Channel/<PolicyName>
+    Policies:
+        # Who may invoke the 'Deliver' API
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        # Who may invoke the 'Broadcast' API
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        # By default, who may modify elements at this config level
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+
+    # Capabilities describes the channel level capabilities, see the
+    # dedicated Capabilities section elsewhere in this file for a full
+    # description
+    Capabilities:
+        <<: *ChannelCapabilities
+
+Profiles:
+    CustomProfile:
+        <<: *ChannelDefaults
+        Orderer:
+            <<: *OrdererDefaults
+            Capabilities:
+                <<: *OrdererCapabilities
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                    - *ClientOrg
+                    - *InsuranceOrg
+                    - *OemOrg
+
+    NewChannel:
+        Consortium: SampleConsortium
+        <<: *ChannelDefaults
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *OemOrg
+                - *ClientOrg
+                - *InsuranceOrg
+            Capabilities:
+                <<: *ApplicationCapabilities

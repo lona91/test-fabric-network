@@ -1,0 +1,62 @@
+{
+	"name": "first-network",
+	"version": "1.0.0",
+	"client": {
+		"tlsEnable": false,
+		"adminUser": "admin",
+		"adminPassword": "adminpw",
+		"enableAuthentication": true,
+		"organization": "oem",
+		"connection": {
+			"timeout": {
+				"peer": {
+					"endorser": "300"
+				},
+				"orderer": "300"
+			}
+		}
+	},
+	"channels": {
+		"custom-channel":	 {
+			"orderers": ["orderer.oem.rms.com"],
+			"peers": {
+				"peer0.oem.rms.com": {}
+			}
+		}
+	},
+	"organizations": {
+		"oem": {
+			"mspid": "oemMSP",
+			"peers": ["peer0.oem.rms.com"],
+			"certificateAuthorities": ["ca.oem.rms.com"],
+			"adminPrivateKey": {
+				"path": "/tmp/crypto/rms.com/oem/users/Admin@oem.rms.com/msp/keystore/9b03e7e9c2fccedfd94b917c0541cbcbd2449d1c04c92127056de3496460caec_sk"
+			},
+			"signedCert": {
+				"path": "/tmp/crypto/rms.com/oem/users/Admin@oem.rms.com/msp/signcerts/cert.pem"
+			}
+		}
+	},
+	"peers": {
+		"peer0.oem.rms.com": {
+			"url": "grpcs://peer0.oem.rms.com:7051",
+			"tlsCACerts": {
+				"path": "/tmp/crypto/rms.com/oem/peer0/tls/ca.crt"
+			}
+		}
+	},
+	"certificateAuthorities": {
+		"ca.oem.rms.com": {
+			"url": "https://ca.oem.rms.com:7054",
+			"caName": "ca-oem"
+		}
+	},
+	"orderers": {
+		"orderer.example.com": {
+			"url": "grpcs://orderer.oem.rms.com:7050",
+			"tlsCACerts": {
+				"path": "/tmp/crypto/rms.com/oem/orderer/tls/ca.crt"
+			}
+		}
+	}
+}

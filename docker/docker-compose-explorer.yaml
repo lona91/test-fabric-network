@@ -1,0 +1,62 @@
+version: '3.0'
+
+volumes:
+  pgdata:
+  walletstore:
+  grafana-storage:
+  prometheus-storage:
+
+networks:
+    mynetwork.com:
+        external:
+            name: docker_fabric
+
+services:
+
+  explorerdb.rms.com:
+    image: hyperledger/explorer-db:latest
+    container_name: explorerdb.rms.com
+    hostname: explorerdb.rms.com
+    environment:
+      - DATABASE_DATABASE=fabricexplorer
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports: 
+      - 5432:5432
+    networks:
+      - mynetwork.com
+
+  explorer.rms.com:
+    image: hyperledger/explorer:latest
+    container_name: explorer.rms.com
+    hostname: explorer.rms.com
+    environment:
+      - DATABASE_HOST=explorerdb.rms.com
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWD=password
+      - DISCOVERY_AS_LOCALHOST=false
+    working_dir: /opt/explorer
+    volumes:
+      - ../explorer/config.json:/opt/explorer/app/platform/fabric/config.json
+      - ../explorer/custom-network.json:/opt/explorer/app/platform/fabric/connection-profile/custom-network.json
+      - ../organizations:/tmp/crypto
+      - walletstore:/opt/wallet
+    command:  sh -c "node /opt/explorer/main.js && tail -f /dev/null"
+    depends_on: 
+      - explorerdb.rms.com   
+    ports:
+      - 8090:8080
+    networks:
+      - mynetwork.com
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    ports:
+      - '3000:3000'
+    networks:
+      - mynetwork.com
